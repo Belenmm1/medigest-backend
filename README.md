@@ -1,6 +1,6 @@
 # MediGest Pro — Backend
 
-Backend profesional para el sistema de gestión hospitalaria MediGest Pro.
+Backend profesional para el sistema de gestión MediGest.
 
 **Stack:** Node.js 20 · Express · PostgreSQL 16 · Redis 7 · JWT · Docker
 
