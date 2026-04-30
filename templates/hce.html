@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>HCE — {{ paciente.apellido }}, {{ paciente.nombre }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 11px;
+      color: #1a1a2e;
+      background: #fff;
+      line-height: 1.5;
+    }
+
+    /* ── PÁGINA ── */
+    @page {
+      size: A4;
+      margin: 18mm 16mm 22mm 16mm;
+      @bottom-center {
+        content: "Página " counter(page) " de " counter(pages)
+                 "  ·  Generado el {{ fecha_generacion }}  ·  Por: {{ exportado_por }}";
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 8px;
+        color: #888;
+      }
+    }
+
+    /* ── ENCABEZADO ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0d47a1;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .header-logo {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 18px;
+      font-weight: 500;
+      color: #0d47a1;
+      letter-spacing: -0.02em;
+    }
+    .header-logo span { color: #1565c0; font-weight: 300; }
+    .header-sub {
+      font-size: 9px;
+      color: #666;
+      margin-top: 2px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .header-right {
+      text-align: right;
+      font-size: 10px;
+      color: #444;
+    }
+    .header-right strong { color: #0d47a1; font-size: 12px; }
+
+    /* ── BADGE HCE ── */
+    .hce-badge {
+      background: #0d47a1;
+      color: #fff;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 2px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    /* ── SECCIÓN TÍTULO ── */
+    .seccion {
+      margin-bottom: 16px;
+      page-break-inside: avoid;
+    }
+    .seccion-titulo {
+      font-size: 9px;
+      font-weight: 600;
+      color: #0d47a1;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-bottom: 1px solid #c5cae9;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    /* ── GRID DOS COLUMNAS ── */
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ── CAMPO ── */
+    .campo { margin-bottom: 5px; }
+    .campo-label {
+      font-size: 8.5px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .campo-valor {
+      font-size: 11px;
+      color: #111;
+    }
+    .campo-valor.vacio { color: #aaa; font-style: italic; }
+
+    /* ── CHIP ALERGIAS ── */
+    .chip-alergia {
+      display: inline-block;
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ef9a9a;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 2px;
+      margin: 2px 3px 2px 0;
+    }
+
+    /* ── TABLA ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+    }
+    th {
+      background: #e8eaf6;
+      color: #283593;
+      font-weight: 600;
+      font-size: 8.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 5px 7px;
+      text-align: left;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    td {
+      padding: 5px 7px;
+      border-bottom: 1px solid #eeeeee;
+      vertical-align: top;
+      color: #222;
+    }
+    tr:nth-child(even) td { background: #fafafa; }
+
+    /* ── MEDICACIÓN ACTIVA ── */
+    .med-item {
+      background: #e8f5e9;
+      border-left: 3px solid #2e7d32;
+      padding: 5px 8px;
+      margin-bottom: 5px;
+      border-radius: 0 2px 2px 0;
+    }
+    .med-nombre { font-weight: 600; color: #1b5e20; font-size: 11px; }
+    .med-detalle { color: #388e3c; font-size: 9.5px; }
+
+    /* ── SIGNOS VITALES INLINE ── */
+    .sv-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .sv-item {
+      background: #f3f4f6;
+      border-radius: 2px;
+      padding: 4px 6px;
+      text-align: center;
+    }
+    .sv-label { font-size: 7.5px; color: #888; text-transform: uppercase; }
+    .sv-valor { font-size: 11px; font-weight: 600; color: #1a237e; font-family: 'IBM Plex Mono', monospace; }
+    .sv-valor.sin-dato { color: #ccc; font-size: 9px; font-weight: 400; }
+
+    /* ── SEPARADOR ── */
+    .sep { border: none; border-top: 1px solid #e8eaf6; margin: 12px 0; }
+
+    /* ── EVOLUCIÓN CARD ── */
+    .evol-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 3px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      page-break-inside: avoid;
+    }
+    .evol-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    .evol-fecha {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      color: #666;
+    }
+    .evol-medico {
+      font-size: 9px;
+      color: #0d47a1;
+      font-weight: 600;
+    }
+    .evol-motivo { font-weight: 600; margin-bottom: 3px; }
+    .evol-diag { color: #333; font-style: italic; }
+    .evol-notas { color: #555; margin-top: 3px; font-size: 10px; }
+
+    /* ── SIN DATOS ── */
+    .sin-datos {
+      color: #aaa;
+      font-style: italic;
+      font-size: 10px;
+      padding: 6px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ENCABEZADO -->
+  <div class="header">
+    <div>
+      <div class="header-logo">Medi<span>Gest</span> Pro</div>
+      <div class="header-sub">Sistema de Gestión Hospitalaria</div>
+    </div>
+    <div class="header-right">
+      <strong>Historia Clínica Electrónica</strong><br>
+      DNI {{ paciente.dni }}<br>
+      Generado: {{ fecha_generacion }}
+    </div>
+  </div>
+
+  <div class="hce-badge">HCE — Documento oficial</div>
+
+  <!-- DATOS DEMOGRÁFICOS -->
+  <div class="seccion">
+    <div class="seccion-titulo">01 — Datos del paciente</div>
+    <div class="grid2">
+      <div>
+        <div class="campo">
+          <div class="campo-label">Nombre completo</div>
+          <div class="campo-valor">{{ paciente.apellido }}, {{ paciente.nombre }}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">DNI</div>
+          <div class="campo-valor">{{ paciente.dni }}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Fecha de nacimiento</div>
+          <div class="campo-valor">{{ paciente.fecha_nacimiento }} ({{ edad }} años)</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Sexo</div>
+          <div class="campo-valor">{{ paciente.sexo | capitalize }}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Grupo sanguíneo</div>
+          <div class="campo-valor {% if not paciente.grupo_sanguineo %}vacio{% endif %}">
+            {{ paciente.grupo_sanguineo or 'No registrado' }}
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="campo">
+          <div class="campo-label">Obra social</div>
+          <div class="campo-valor {% if not paciente.obra_social %}vacio{% endif %}">
+            {{ paciente.obra_social or 'Sin obra social' }}
+            {% if paciente.nro_afiliado %} · Afil. {{ paciente.nro_afiliado }}{% endif %}
+          </div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Teléfono</div>
+          <div class="campo-valor {% if not paciente.telefono %}vacio{% endif %}">
+            {{ paciente.telefono or '—' }}
+          </div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Email</div>
+          <div class="campo-valor {% if not paciente.email %}vacio{% endif %}">
+            {{ paciente.email or '—' }}
+          </div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Peso / Talla</div>
+          <div class="campo-valor">
+            {% if paciente.peso_kg %}{{ paciente.peso_kg }} kg{% else %}—{% endif %}
+            /
+            {% if paciente.talla_cm %}{{ paciente.talla_cm }} cm{% else %}—{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if paciente.antecedentes %}
+    <div class="campo" style="margin-top:8px">
+      <div class="campo-label">Antecedentes</div>
+      <div class="campo-valor">{{ paciente.antecedentes }}</div>
+    </div>
+    {% endif %}
+
+    {% if paciente.alergias %}
+    <div class="campo" style="margin-top:8px">
+      <div class="campo-label">Alergias conocidas</div>
+      <div style="margin-top:3px">
+        {% for alergia in paciente.alergias.split(',') %}
+          <span class="chip-alergia">⚠ {{ alergia.strip() }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <hr class="sep">
+
+  <!-- MEDICACIÓN ACTIVA -->
+  <div class="seccion">
+    <div class="seccion-titulo">02 — Medicación activa</div>
+    {% if medicacion %}
+      {% for m in medicacion %}
+      <div class="med-item">
+        <div class="med-nombre">{{ m.farmaco }} — {{ m.dosis }}</div>
+        <div class="med-detalle">{{ m.frecuencia }}
+          · Desde {{ m.inicio }}{% if m.fin %} hasta {{ m.fin }}{% endif %}
+          {% if m.notas %} · {{ m.notas }}{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="sin-datos">Sin medicación activa registrada.</div>
+    {% endif %}
+  </div>
+
+  <hr class="sep">
+
+  <!-- EVOLUCIONES -->
+  <div class="seccion">
+    <div class="seccion-titulo">03 — Evoluciones clínicas (últimas {{ evoluciones|length }})</div>
+    {% if evoluciones %}
+      {% for e in evoluciones %}
+      <div class="evol-card">
+        <div class="evol-header">
+          <span class="evol-fecha">{{ e.created_at.strftime('%d/%m/%Y %H:%M') if e.created_at else e.created_at }}</span>
+          <span class="evol-medico">{{ e.medico_nombre }}{% if e.medico_especialidad %} · {{ e.medico_especialidad }}{% endif %}</span>
+        </div>
+        <div class="evol-motivo">{{ e.motivo_consulta }}</div>
+        {% if e.diagnostico %}
+          <div class="evol-diag">Dx: {{ e.diagnostico }}</div>
+        {% endif %}
+
+        <!-- Signos vitales -->
+        {% if e.ta_sistolica or e.fc_lpm or e.spo2_pct or e.temperatura %}
+        <div class="sv-grid" style="margin-top:5px">
+          <div class="sv-item">
+            <div class="sv-label">TA</div>
+            <div class="sv-valor {% if not e.ta_sistolica %}sin-dato{% endif %}">
+              {% if e.ta_sistolica %}{{ e.ta_sistolica }}/{{ e.ta_diastolica }}{% else %}—{% endif %}
+            </div>
+          </div>
+          <div class="sv-item">
+            <div class="sv-label">FC</div>
+            <div class="sv-valor {% if not e.fc_lpm %}sin-dato{% endif %}">
+              {% if e.fc_lpm %}{{ e.fc_lpm }} lpm{% else %}—{% endif %}
+            </div>
+          </div>
+          <div class="sv-item">
+            <div class="sv-label">SpO₂</div>
+            <div class="sv-valor {% if not e.spo2_pct %}sin-dato{% endif %}">
+              {% if e.spo2_pct %}{{ e.spo2_pct }}%{% else %}—{% endif %}
+            </div>
+          </div>
+          <div class="sv-item">
+            <div class="sv-label">Temp</div>
+            <div class="sv-valor {% if not e.temperatura %}sin-dato{% endif %}">
+              {% if e.temperatura %}{{ e.temperatura }}°C{% else %}—{% endif %}
+            </div>
+          </div>
+          <div class="sv-item">
+            <div class="sv-label">Peso</div>
+            <div class="sv-valor {% if not e.peso_kg %}sin-dato{% endif %}">
+              {% if e.peso_kg %}{{ e.peso_kg }} kg{% else %}—{% endif %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if e.notas %}
+          <div class="evol-notas">{{ e.notas }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="sin-datos">Sin evoluciones registradas.</div>
+    {% endif %}
+  </div>
+
+</body>
+</html>
