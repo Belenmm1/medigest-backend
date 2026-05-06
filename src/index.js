@@ -9,6 +9,10 @@
 // Cargar variables de entorno primero
 require('dotenv').config();
 
+
+const http              = require('http');
+const { initWebSocket } = require('./services/websocketService');
+
 const env    = require('./config/env');
 const logger = require('./config/logger');
 const app    = require('./app');
@@ -28,11 +32,12 @@ async function start() {
     logger.info('✅ Redis conectado');
 
     // 3. Arrancar servidor HTTP
-    server = app.listen(env.PORT, env.HOST, () => {
-      logger.info(
-        { port: env.PORT, host: env.HOST, env: env.NODE_ENV },
-        `🚀 MediGest Pro API corriendo en http://${env.HOST}:${env.PORT}`
-      );
+    const PORT = process.env.PORT || 3000;
+    const httpServer = http.createServer(app);
+    initWebSocket(httpServer);
+    httpServer.listen(PORT, () => {
+        console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+        console.log('✅ Base de datos conectada');
     });
 
     // 4. WebSocket (Socket.IO) — se añade cuando se implemente el módulo real-time

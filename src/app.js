@@ -1,54 +1,59 @@
 /**
  * src/app.js
  * Configuración de la aplicación Express.
- * Separado de src/index.js para facilitar testing.
  */
 
 'use strict';
 
-const express    = require('express');
-const helmet     = require('helmet');
-const cors       = require('cors');
-const compression = require('compression');
-const morgan     = require('morgan');
+const express      = require('express');
+const helmet       = require('helmet');
+const cors         = require('cors');
+const compression  = require('compression');
+const morgan       = require('morgan');
 const cookieParser = require('cookie-parser');
-const xss        = require('xss');
-const env        = require('./config/env');
-const logger     = require('./config/logger');
+const xss          = require('xss');
+const env          = require('./config/env');
+const logger       = require('./config/logger');
 
 // Middlewares propios
 const { globalLimiter }  = require('./middlewares/rateLimiter');
 const errorHandler       = require('./middlewares/errorHandler');
+const { authenticate }   = require('./middlewares/auth');
 
-// Rutas
-const authRoutes         = require('./routes/auth.routes');
-// Los demás módulos se irán añadiendo aquí:
-// const pacientesRoutes = require('./routes/pacientes.routes');
-// const turnosRoutes    = require('./routes/turnos.routes');
+// --- RUTAS (IMPORTACIÓN ÚNICA) ---
+
+const authRoutes      = require('./routes/auth.routes');
+const pacientesRoutes = require('./routes/pacientes.routes'); 
+const turnosRoutes    = require('./routes/turnos.routes');
 
 const app = express();
 
 /* ─── SEGURIDAD ──────────────────────────────────────────────────── */
 
-// Helmet: cabeceras de seguridad HTTP
 app.use(helmet({
-  contentSecurityPolicy: false, // Configurar según frontend
+  contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// CORS: solo orígenes permitidos
-const allowedOrigins = env.CORS_ORIGINS.split(',').map(o => o.trim());
+// 1. Definimos una lista extendida de orígenes para desarrollo
+const allowedOrigins = [
+  ...env.CORS_ORIGINS.split(',').map(o => o.trim()),
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  'null' // 👈 Esto permite que el origen 'null' del navegador no sea rebotado
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir requests sin origin (ej: curl, mobile apps)
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Permitimos la conexión si no hay origin (ej: Postman) o si está en la lista
+    if (!origin || allowedOrigins.includes(origin) || origin === 'null') {
       callback(null, true);
     } else {
       logger.warn({ origin }, 'CORS bloqueado');
       callback(new Error(`CORS: Origen no permitido: ${origin}`));
     }
   },
-  credentials: true, // Necesario para cookies httpOnly
+  credentials: true,
   methods:     ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
 }));
@@ -82,7 +87,6 @@ function sanitizeObject(obj) {
 
 /* ─── LOGGING HTTP ───────────────────────────────────────────────── */
 
-// Morgan integrado con Pino
 app.use(morgan('combined', {
   stream: { write: (msg) => logger.info(msg.trim()) },
   skip: (req) => req.path === '/health',
@@ -105,9 +109,7 @@ app.get('/health', async (req, res) => {
   try {
     const { healthCheck: dbCheck } = require('./config/database');
     const { healthCheck: redisCheck } = require('./config/redis');
-
     const [dbTime, redisOk] = await Promise.all([dbCheck(), redisCheck()]);
-
     res.json({
       status:  'ok',
       version: process.env.npm_package_version || '1.0.0',
@@ -125,9 +127,8 @@ app.get('/health', async (req, res) => {
 /* ─── RUTAS API ──────────────────────────────────────────────────── */
 
 app.use('/api/auth',      authRoutes);
-// app.use('/api/pacientes', authenticate, pacientesRoutes);
-// app.use('/api/turnos',    authenticate, turnosRoutes);
-// ... resto de módulos
+app.use('/api/pacientes', authenticate, pacientesRoutes);
+app.use('/api/turnos',    authenticate, turnosRoutes);
 
 /* ─── 404 ─────────────────────────────────────────────────────────── */
 
