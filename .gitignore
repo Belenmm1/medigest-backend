@@ -1,0 +1,55 @@
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+docker-data/
+postgres-data/
+redis-data/
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+
+# Uploads
+uploads/
+
+# Generated files
+*.tgz
+
+# Testing
+coverage/
+
+# Package managers
+.pnpm-store/
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+.env.backup
+.env.old
+
+# Python (por si mezclás herramientas)
+__pycache__/
+*.pyc
+
+# Accidentally generated folders
+{src/
+```
