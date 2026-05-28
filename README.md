@@ -4,7 +4,7 @@ Para un funcionamiento integral, este repositorio se conecta con nuestra API ded
 *   **Repositorio Backend:** [Belenmm1/medigest-backend](https://github.com/Belenmm1/medigest-backend)
 
 
-# MediGest Pro — Backend
+# MediGest  — Backend
 
 Backend profesional para el sistema de gestión MediGest.
 
