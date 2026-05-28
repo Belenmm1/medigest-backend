@@ -187,12 +187,4 @@ Características del interceptor incluido:
 
 ---
 
-## Próximos módulos
 
-- 02 — Schema completo PostgreSQL (todas las tablas)
-- 03 — API REST: Pacientes con historia clínica versionada
-- 04 — API REST: Turnos con detección de conflictos
-- 05 — WebSockets (sala de espera, camas en tiempo real)
-- 06 — Queue de notificaciones (BullMQ + Redis)
-- 07 — Exportación PDF de historia clínica
-- 08 — Auditoría inmutable de accesos
